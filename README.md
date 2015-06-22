@@ -13,7 +13,7 @@ This is an example of creating custom android wallpaper with Cocos2dx.
 
 **ANDROID_SDK_ROOT** and **NDK_ROOT** is for cocos2dx.
 
-* Enter your cocos2dx root dir, use the command below
+* Enter your cocos2dx root dir, use the command below to create a new project. As you see, the project is under '$YOUR_COCOS_ROOT/projects' folder.
 ```
 cd tools/project-creator
 chmod u+x create_project.py
