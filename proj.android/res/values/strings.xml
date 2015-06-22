@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Cocos2dxWallpaper</string>
+    <string name="wallpaper_name">MyCustomWallpaper</string>
 </resources>

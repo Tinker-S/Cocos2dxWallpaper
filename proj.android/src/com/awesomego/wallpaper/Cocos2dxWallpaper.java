@@ -1,48 +1,118 @@
-/****************************************************************************
-Copyright (c) 2010-2011 cocos2d-x.org
-
-http://www.cocos2d-x.org
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-****************************************************************************/
 package com.awesomego.wallpaper;
+
+import javax.microedition.khronos.egl.EGLConfig;
+import javax.microedition.khronos.opengles.GL10;
 
 import org.cocos2dx.lib.Cocos2dxActivity;
 import org.cocos2dx.lib.Cocos2dxGLSurfaceView;
+import org.cocos2dx.lib.Cocos2dxHelper;
+import org.cocos2dx.lib.Cocos2dxHelper.Cocos2dxHelperListener;
+import org.cocos2dx.lib.Cocos2dxRenderer;
 
+import android.content.Context;
+import android.opengl.GLSurfaceView.Renderer;
 import android.os.Bundle;
+import android.service.wallpaper.WallpaperService;
+import android.view.SurfaceHolder;
 
-public class Cocos2dxWallpaper extends Cocos2dxActivity{
-	
-    protected void onCreate(Bundle savedInstanceState){
-		super.onCreate(savedInstanceState);	
-	}
-
-    public Cocos2dxGLSurfaceView onCreateView() {
-    	Cocos2dxGLSurfaceView glSurfaceView = new Cocos2dxGLSurfaceView(this);
-    	// Cocos2dxWallpaper should create stencil buffer
-    	glSurfaceView.setEGLConfigChooser(5, 6, 5, 0, 16, 8);
-    	
-    	return glSurfaceView;
-    }
+public class Cocos2dxWallpaper extends WallpaperService {
 
     static {
         System.loadLibrary("cocos2dcpp");
-    }     
+    }
+
+    @Override
+    public Engine onCreateEngine() {
+        return new MyWallpaperEngine();
+    }
+
+    protected class MyWallpaperEngine extends Engine implements Cocos2dxHelperListener {
+        protected class MyGLSurfaceView extends Cocos2dxGLSurfaceView {
+            MyGLSurfaceView(Context context) {
+                super(context);
+            }
+
+            @Override
+            public SurfaceHolder getHolder() {
+                return getSurfaceHolder();
+            }
+
+            public void onDestroy() {
+                super.onDetachedFromWindow();
+            }
+        }
+
+        protected class MyGLRenderer extends Cocos2dxRenderer {
+            @Override
+            public void onSurfaceCreated(final GL10 pGL10, final EGLConfig pEGLConfig) {
+            }
+
+            @Override
+            public void onSurfaceChanged(final GL10 pGL10, final int pWidth, final int pHeight) {
+                setScreenWidthAndHeight(pWidth, pHeight);
+                super.onSurfaceCreated(null, null);
+            }
+
+        }
+
+        private MyGLSurfaceView mGLSurfaceView;
+
+        private boolean rendererHasBeenSet;
+
+        @Override
+        public void onCreate(SurfaceHolder surfaceHolder) {
+            super.onCreate(surfaceHolder);
+
+            mGLSurfaceView = new MyGLSurfaceView(Cocos2dxWallpaper.this);
+            mGLSurfaceView.setEGLConfigChooser(8, 8, 8, 8, 16, 0);
+            //mGLSurfaceView.setCocos2dxRenderer(new Cocos2dxRenderer());
+            setRenderer(getNewRenderer());
+            Cocos2dxHelper.init(Cocos2dxWallpaper.this, this);
+        }
+
+        @Override
+        public void onVisibilityChanged(boolean visible) {
+            super.onVisibilityChanged(visible);
+
+            if (visible) {
+                Cocos2dxHelper.onResume();
+                mGLSurfaceView.onResume();
+            } else {
+                Cocos2dxHelper.onPause();
+                mGLSurfaceView.onPause();
+            }
+        }
+
+        @Override
+        public void onDestroy() {
+            super.onDestroy();
+
+            Cocos2dxHelper.end();
+            mGLSurfaceView.onDestroy();
+        }
+
+        protected void setRenderer(Renderer renderer) {
+            mGLSurfaceView.setCocos2dxRenderer((Cocos2dxRenderer) renderer);
+            rendererHasBeenSet = true;
+        }
+
+        Renderer getNewRenderer(){
+            Cocos2dxRenderer renderer = new MyGLRenderer();
+            return renderer;
+        }
+
+        @Override
+        public void showDialog(String pTitle, String pMessage) {
+        }
+
+        @Override
+        public void showEditTextDialog(String pTitle, String pMessage, int pInputMode, int pInputFlag, int pReturnType, int pMaxLength) {
+        }
+
+        @Override
+        public void runOnGLThread(Runnable pRunnable) {
+            mGLSurfaceView.queueEvent(pRunnable);
+        }
+    }
+
 }
